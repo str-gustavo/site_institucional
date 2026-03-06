@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS | Logística Inteligente</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- GSAP & ScrollTrigger -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        nexus: {
+                            white: '#ffffff',
+                            bg: '#fcfcfd',
+                            blue: '#00678a',
+                            cyan: '#00d0a1',
+                            cyanHover: '#00b88f',
+                            dark: '#111827',
+                            gray: '#f3f4f6',
+                            border: '#e5e7eb',
+                            textGray: '#4b5563'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #fcfcfd;
+            color: #111827;
+            overflow-x: hidden;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d1d5db; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00678a; 
+        }
+
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .hero-gradient {
+            background: radial-gradient(circle at 50% 50%, rgba(0, 208, 161, 0.05) 0%, rgba(0, 103, 138, 0.05) 100%);
+        }
+
+        /* Mockup Styles */
+        .phone-mockup {
+            border: 12px solid #111827;
+            border-radius: 44px;
+            box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.15);
+            background: #ffffff;
+            position: relative;
+            overflow: hidden;
+        }
+        .phone-notch {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 140px;
+            height: 30px;
+            background: #111827;
+            border-bottom-left-radius: 18px;
+            border-bottom-right-radius: 18px;
+            z-index: 10;
+        }
+
+        .web-mockup {
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 16px;
+            box-shadow: 0 40px 80px -15px rgba(0, 0, 0, 0.08);
+            background: #ffffff;
+            overflow: hidden;
+        }
+        .web-header {
+            height: 40px;
+            background: #f9fafb;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            gap: 8px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        .web-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #e5e7eb;
+        }
+
+        .card-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+            transition: all 0.3s ease;
+        }
+        .card-shadow:hover {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+        }
+
+        .gps-route-btn {
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
+        }
+        .gps-route-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px -8px rgba(17, 24, 39, 0.45);
+        }
+        .gps-route-btn.is-loading {
+            background-color: #00678a;
+        }
+        .gps-route-btn.is-done {
+            background-color: #00b88f;
+        }
+        .gps-route-progress {
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 0;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.95);
+        }
+        .gps-route-btn.is-loading .gps-route-progress {
+            animation: gps-progress 1.3s ease forwards;
+        }
+        .gps-route-btn.is-pulse {
+            animation: gps-pulse 0.45s ease;
+        }
+        .gps-spinner {
+            animation: gps-spin 0.9s linear infinite;
+        }
+        .gps-route-screen {
+            background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+        }
+        .gps-map-preview {
+            background-image:
+                linear-gradient(45deg, rgba(0, 103, 138, 0.07) 25%, transparent 25%),
+                linear-gradient(-45deg, rgba(0, 103, 138, 0.07) 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, rgba(0, 208, 161, 0.08) 75%),
+                linear-gradient(-45deg, transparent 75%, rgba(0, 208, 161, 0.08) 75%);
+            background-size: 24px 24px;
+            background-position: 0 0, 0 12px, 12px -12px, -12px 0;
+        }
+        .gps-route-svg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .gps-route-path-base {
+            fill: none;
+            stroke: rgba(0, 103, 138, 0.25);
+            stroke-width: 10;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .gps-route-path-highlight {
+            fill: none;
+            stroke: #00678a;
+            stroke-width: 6;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-dasharray: 8 10;
+            animation: gps-route-flow 2.8s linear infinite;
+        }
+        .gps-pin-ping {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-radius: 9999px;
+            background: #00d0a1;
+            box-shadow: 0 0 0 0 rgba(0, 208, 161, 0.5);
+            animation: gps-ping 1.5s infinite;
+        }
+
+        @keyframes gps-progress {
+            0% { width: 0; }
+            100% { width: 100%; }
+        }
+        @keyframes gps-pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.97); }
+            100% { transform: scale(1); }
+        }
+        @keyframes gps-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes gps-ping {
+            0% { box-shadow: 0 0 0 0 rgba(0, 208, 161, 0.45); }
+            70% { box-shadow: 0 0 0 18px rgba(0, 208, 161, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 208, 161, 0); }
+        }
+        @keyframes gps-route-flow {
+            from { stroke-dashoffset: 0; }
+            to { stroke-dashoffset: -72; }
+        }
+
+        /* App Success Animation */
+        .success-checkmark {
+            display: none;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto;
+        }
+        .check-icon {
+            width: 80px;
+            height: 80px;
+            position: relative;
+            border-radius: 50%;
+            box-sizing: content-box;
+            border: 4px solid #00d0a1;
+        }
+        .check-icon::before {
+            top: 3px;
+            left: -2px;
+            width: 30px;
+            transform-origin: 100% 50%;
+            border-radius: 100px 0 0 100px;
+        }
+        .check-icon::after {
+            top: 0;
+            left: 30px;
+            width: 60px;
+            transform-origin: 0 50%;
+            border-radius: 0 100px 100px 0;
+            animation: rotate-circle 4.25s ease-in;
+        }
+        .check-line {
+            display: block;
+            position: absolute;
+            z-index: 10;
+            height: 5px;
+            background-color: #00d0a1;
+            border-radius: 2px;
+        }
+        .line-tip {
+            top: 46px;
+            left: 14px;
+            width: 25px;
+            transform: rotate(45deg);
+            animation: icon-line-tip 0.75s;
+        }
+        .line-long {
+            top: 38px;
+            right: 8px;
+            width: 47px;
+            transform: rotate(-45deg);
+            animation: icon-line-long 0.75s;
+        }
+
+        @keyframes icon-line-tip {
+            0% { width: 0; left: 1px; top: 19px; }
+            54% { width: 0; left: 1px; top: 19px; }
+            70% { width: 50px; left: -8px; top: 37px; }
+            84% { width: 17px; left: 21px; top: 48px; }
+            100% { width: 25px; left: 14px; top: 46px; }
+        }
+        @keyframes icon-line-long {
+            0% { width: 0; right: 46px; top: 54px; }
+            65% { width: 0; right: 46px; top: 54px; }
+            84% { width: 55px; right: 0px; top: 35px; }
+            100% { width: 47px; right: 8px; top: 38px; }
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-nexus-cyan/30 selection:text-nexus-blue">
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 glass-nav transition-all duration-300 py-4" id="navbar">
+        <div class="max-w-7xl mx-auto px-6 md:px-12 flex justify-between items-center">
+            <!-- Logo -->
+            <a href="#" class="flex items-center gap-1 text-3xl font-black tracking-tighter cursor-pointer">
+                <span class="text-nexus-blue">NE</span><span class="text-nexus-cyan">X</span><span class="text-nexus-blue">US</span>
+            </a>
+            
+            <!-- Desktop Menu -->
+            <div class="hidden md:flex items-center gap-10 text-sm font-semibold text-nexus-textGray">
+                <a href="#solucao" class="hover:text-nexus-blue transition-colors">Solução</a>
+                <a href="#app" class="hover:text-nexus-blue transition-colors">App Mobile</a>
+                <a href="#comprovacao" class="hover:text-nexus-blue transition-colors">Comprovação</a>
+                <a href="#planos" class="hover:text-nexus-blue transition-colors">Preços</a>
+            </div>
+
+            <!-- CTA -->
+            <div class="hidden md:flex items-center gap-4">
+                <a href="#" class="text-sm font-bold text-nexus-blue hover:opacity-70 transition-opacity">Login</a>
+                <a href="#planos" class="bg-nexus-blue hover:bg-[#005470] text-white text-sm font-bold py-3 px-6 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg shadow-nexus-blue/20">
+                    Começar agora
+                </a>
+            </div>
+
+            <!-- Mobile Menu -->
+            <button class="md:hidden text-nexus-blue">
+                <i data-lucide="menu"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative min-h-screen flex items-center justify-center pt-32 pb-20 hero-gradient">
+        <div class="max-w-7xl mx-auto px-6 md:px-12 relative z-10 w-full">
+            <div class="flex flex-col items-center text-center">
+                
+                <div class="hero-element inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-nexus-border text-xs font-bold text-nexus-blue mb-8 shadow-sm">
+                    <span class="relative flex h-2 w-2">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-nexus-cyan opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-2 w-2 bg-nexus-cyan"></span>
+                    </span>
+                    SaaS de Logística Inteligente
+                </div>
+
+                <h1 class="hero-element text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight leading-[1.1] mb-8 text-nexus-dark">
+                    Logística moderna <br class="hidden md:block" />
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-nexus-blue to-nexus-cyan">sem burocracia.</span>
+                </h1>
+                
+                <p class="hero-element text-lg md:text-xl text-nexus-textGray max-w-2xl mb-12 leading-relaxed">
+                    Acompanhe viagens, coletas e entregas em tempo real. Elimine o papel e tenha comprovações digitais com validade imediata.
+                </p>
+                
+                <div class="hero-element flex flex-col sm:flex-row gap-5">
+                    <a href="#planos" class="bg-nexus-dark text-white hover:bg-black text-base font-bold py-5 px-10 rounded-full transition-all duration-300 flex items-center justify-center gap-2 shadow-xl shadow-black/10">
+                        Ver planos e preços
+                    </a>
+                    <a href="#solucao" class="bg-white text-nexus-blue border border-nexus-border hover:bg-nexus-gray text-base font-bold py-5 px-10 rounded-full transition-all duration-300 flex items-center justify-center gap-2">
+                        Como funciona
+                    </a>
+                </div>
+            </div>
+
+            <!-- Main Visual -->
+            <div class="hero-mockup mt-24 relative mx-auto max-w-5xl">
+                <div class="web-mockup h-[350px] md:h-[550px] w-full relative">
+                    <div class="web-header">
+                        <div class="web-dot" style="background: #ff5f57;"></div>
+                        <div class="web-dot" style="background: #febc2e;"></div>
+                        <div class="web-dot" style="background: #28c840;"></div>
+                    </div>
+                    <!-- Mockup Content -->
+                    <div class="p-8 flex h-full">
+                        <div class="hidden md:block w-64 border-r border-nexus-border pr-8 space-y-6">
+                            <div class="h-10 bg-nexus-gray rounded-lg w-full"></div>
+                            <div class="space-y-3 pt-4">
+                                <div class="h-4 bg-nexus-gray rounded w-full"></div>
+                                <div class="h-4 bg-nexus-gray rounded w-5/6"></div>
+                                <div class="h-4 bg-nexus-gray rounded w-full"></div>
+                            </div>
+                        </div>
+                        <div class="flex-1 pl-0 md:pl-8 space-y-8">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="h-24 bg-nexus-gray/50 rounded-xl p-4 border border-nexus-border">
+                                    <div class="text-[10px] font-bold text-nexus-textGray uppercase mb-1">Entregas Concluídas</div>
+                                    <div class="text-3xl font-black text-nexus-blue">1.402</div>
+                                </div>
+                                <div class="h-24 bg-nexus-gray/50 rounded-xl p-4 border border-nexus-border">
+                                    <div class="text-[10px] font-bold text-nexus-textGray uppercase mb-1">Ocorrências Ativas</div>
+                                    <div class="text-3xl font-black text-red-500">08</div>
+                                </div>
+                                <div class="h-24 bg-nexus-gray/50 rounded-xl p-4 border border-nexus-border">
+                                    <div class="text-[10px] font-bold text-nexus-textGray uppercase mb-1">Taxa de Sucesso</div>
+                                    <div class="text-3xl font-black text-nexus-cyan">99.2%</div>
+                                </div>
+                            </div>
+                            <div class="h-full bg-nexus-gray/30 rounded-2xl border border-nexus-border p-6">
+                                <div class="flex justify-between items-center mb-6">
+                                    <div class="h-6 bg-nexus-gray rounded w-48"></div>
+                                    <div class="h-8 bg-nexus-blue/10 rounded-full w-24"></div>
+                                </div>
+                                <div class="space-y-4">
+                                    <div class="h-12 bg-white rounded-lg border border-nexus-border flex items-center px-4 justify-between">
+                                        <div class="flex gap-3 items-center">
+                                            <div class="w-8 h-8 rounded bg-nexus-cyan/20"></div>
+                                            <div class="h-3 bg-nexus-gray rounded w-32"></div>
+                                        </div>
+                                        <div class="h-3 bg-nexus-gray rounded w-20"></div>
+                                    </div>
+                                    <div class="h-12 bg-white rounded-lg border border-nexus-border flex items-center px-4 justify-between">
+                                        <div class="flex gap-3 items-center">
+                                            <div class="w-8 h-8 rounded bg-nexus-blue/20"></div>
+                                            <div class="h-3 bg-nexus-gray rounded w-32"></div>
+                                        </div>
+                                        <div class="h-3 bg-nexus-gray rounded w-20"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Floating Mobile -->
+                <div class="phone-mockup absolute -right-4 md:-right-10 -bottom-10 md:-bottom-20 w-[240px] h-[480px] z-20 hidden sm:block transform rotate-6 scale-90 md:scale-100">
+                    <div class="phone-notch"></div>
+                    <!-- App Interface Container -->
+                    <div id="app-interface" class="p-6 pt-12 h-full flex flex-col transition-all duration-500">
+                        <div class="text-lg font-bold mb-6 text-nexus-dark">Nova Entrega</div>
+                        <div class="bg-nexus-gray rounded-2xl p-4 mb-4">
+                            <div class="text-[10px] font-bold text-nexus-textGray mb-2 uppercase">Destinatário</div>
+                            <div class="font-bold text-sm">João Silva (Nexus Ltda)</div>
+                            <div class="text-xs text-nexus-textGray">Av. Paulista, 1000 - SP</div>
+                        </div>
+                        <div class="flex gap-2 mb-6">
+                            <div class="flex-1 h-16 bg-nexus-gray rounded-xl flex flex-col items-center justify-center text-nexus-textGray">
+                                <i data-lucide="camera" class="w-4 h-4 mb-1"></i>
+                                <span class="text-[8px] font-bold">FOTO</span>
+                            </div>
+                            <div class="flex-1 h-16 bg-nexus-gray rounded-xl flex flex-col items-center justify-center text-nexus-textGray">
+                                <i data-lucide="pen-tool" class="w-4 h-4 mb-1"></i>
+                                <span class="text-[8px] font-bold">ASSINAR</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Interative Button -->
+                        <button onclick="handleFinishDelivery(this)" class="group relative w-full h-12 bg-nexus-cyan rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-nexus-cyan/30 transition-all active:scale-95 overflow-hidden">
+                            <span class="btn-text">Finalizar Baixa</span>
+                            <div class="btn-loader hidden">
+                                <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            </div>
+                        </button>
+                    </div>
+
+                    <!-- Success State (Hidden by default) -->
+                    <div id="app-success" class="absolute inset-0 bg-white flex flex-col items-center justify-center p-6 text-center opacity-0 pointer-events-none transition-all duration-500 translate-y-10">
+                        <div class="success-checkmark mb-6" style="display: block;">
+                            <div class="check-icon">
+                                <span class="check-line line-tip"></span>
+                                <span class="check-line line-long"></span>
+                            </div>
+                        </div>
+                        <h3 class="text-xl font-bold text-nexus-dark mb-2">Baixa Concluída!</h3>
+                        <p class="text-sm text-nexus-textGray mb-8">Comprovante digital enviado para o portal em tempo real.</p>
+                        <button onclick="resetDelivery()" class="text-xs font-bold text-nexus-blue border-b border-nexus-blue">Realizar nova entrega</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Highlight Section: Complete and Customizable -->
+    <section id="comprovacao" class="py-24 bg-nexus-dark text-white relative overflow-hidden">
+        <!-- Background Elements -->
+        <div class="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-nexus-blue/20 to-transparent"></div>
+        
+        <div class="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                <div class="gsap-fade-right">
+                    <span class="text-nexus-cyan font-extrabold uppercase tracking-widest text-sm mb-4 block">O Diferencial Nexus</span>
+                    <h2 class="text-4xl md:text-5xl font-black mb-8 leading-tight">
+                        A comprovação digital mais <span class="text-nexus-cyan">completa e customizável</span> do mercado.
+                    </h2>
+                    <p class="text-nexus-gray/70 text-lg mb-10 leading-relaxed">
+                        Não nos adaptamos apenas ao seu negócio; nós fornecemos as ferramentas para você moldar o sistema conforme suas regras de frete, tipos de mercadoria e exigências de clientes.
+                    </p>
+                    
+                    <div class="space-y-6">
+                        <div class="flex gap-4 items-start">
+                            <div class="p-2 bg-nexus-cyan/20 rounded-lg text-nexus-cyan">
+                                <i data-lucide="settings-2" class="w-6 h-6"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-lg">Checklists Dinâmicos</h4>
+                                <p class="text-sm text-nexus-gray/60">Crie perguntas obrigatórias específicas para cada tipo de entrega ou cliente.</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4 items-start">
+                            <div class="p-2 bg-nexus-blue/20 rounded-lg text-nexus-blue">
+                                <i data-lucide="layers" class="w-6 h-6"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-lg">Customização de Workflow</h4>
+                                <p class="text-sm text-nexus-gray/60">Defina se a entrega exige foto, assinatura, canhoto ou todos os itens juntos.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 gsap-scale-up">
+                    <div class="bg-white/5 border border-white/10 p-6 rounded-2xl backdrop-blur-sm">
+                        <i data-lucide="shield-check" class="text-nexus-cyan mb-4"></i>
+                        <h5 class="font-bold mb-2">Validade Jurídica</h5>
+                        <p class="text-xs text-nexus-gray/50">Captura de IP, GPS e Timestamp em cada ação.</p>
+                    </div>
+                    <div class="bg-white/5 border border-white/10 p-6 rounded-2xl backdrop-blur-sm mt-8">
+                        <i data-lucide="cpu" class="text-nexus-cyan mb-4"></i>
+                        <h5 class="font-bold mb-2">IA Anti-Fraude</h5>
+                        <p class="text-xs text-nexus-gray/50">Análise automática de fotos para evitar envios repetidos ou fakes.</p>
+                    </div>
+                    <div class="bg-white/5 border border-white/10 p-6 rounded-2xl backdrop-blur-sm">
+                        <i data-lucide="file-json" class="text-nexus-cyan mb-4"></i>
+                        <h5 class="font-bold mb-2">API Aberta</h5>
+                        <p class="text-xs text-nexus-gray/50">Conecte-se a qualquer ERP em minutos via Webhooks.</p>
+                    </div>
+                    <div class="bg-white/5 border border-white/10 p-6 rounded-2xl backdrop-blur-sm mt-8">
+                        <i data-lucide="users" class="text-nexus-cyan mb-4"></i>
+                        <h5 class="font-bold mb-2">Multi-Empresa</h5>
+                        <p class="text-xs text-nexus-gray/50">Gerencie diversas transportadoras em uma única tela.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- App Features -->
+    <section id="app" class="py-32 bg-white border-y border-nexus-border overflow-hidden">
+        <div class="max-w-7xl mx-auto px-6 md:px-12">
+            <div class="flex flex-col md:flex-row items-center gap-20">
+                <div class="w-full md:w-1/2 gsap-fade-right">
+                    <span class="text-nexus-cyan font-extrabold uppercase tracking-widest text-sm mb-4 block">Operação de Campo</span>
+                    <h2 class="text-4xl md:text-6xl font-black text-nexus-dark mb-8 leading-tight">O motorista com controle total.</h2>
+                    <p class="text-nexus-textGray text-lg mb-12 leading-relaxed">
+                        Transforme o telemóvel dos seus motoristas num terminal de logística avançado. Simples de usar, mesmo para quem não tem afinidade com tecnologia.
+                    </p>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-10">
+                        <div class="space-y-4">
+                            <div class="w-12 h-12 rounded-2xl bg-nexus-cyan/10 flex items-center justify-center text-nexus-cyan">
+                                <i data-lucide="camera"></i>
+                            </div>
+                            <h4 class="font-bold text-nexus-dark">Fotos em Tempo Real</h4>
+                            <p class="text-sm text-nexus-textGray">Comprove o estado da carga e o local de entrega com fotos geolocalizadas.</p>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="w-12 h-12 rounded-2xl bg-nexus-blue/10 flex items-center justify-center text-nexus-blue">
+                                <i data-lucide="user-check"></i>
+                            </div>
+                            <h4 class="font-bold text-nexus-dark">Assinatura Digital</h4>
+                            <p class="text-sm text-nexus-textGray">Assinatura no ecrã com captura de nome e documento do recebedor.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="w-full md:w-1/2 flex justify-center gsap-scale-up">
+                    <div class="phone-mockup w-[320px] h-[640px]">
+                        <div class="phone-notch"></div>
+                        <div id="driver-app-home" class="p-6 pt-16 h-full flex flex-col transition-all duration-500">
+                            <div class="flex items-center justify-between mb-8">
+                                <div class="w-10 h-10 rounded-full bg-nexus-gray"></div>
+                                <div class="font-bold">Minhas Viagens</div>
+                                <i data-lucide="bell" class="w-5 h-5"></i>
+                            </div>
+                            <div class="space-y-4 flex-1">
+                                <div class="p-4 rounded-2xl border border-nexus-border bg-white card-shadow">
+                                    <div class="flex justify-between mb-3">
+                                        <span class="text-[10px] font-bold text-nexus-cyan bg-nexus-cyan/10 px-2 py-0.5 rounded uppercase">Coleta</span>
+                                        <span class="text-[10px] text-nexus-textGray">Há 5 min</span>
+                                    </div>
+                                    <div class="font-bold text-sm mb-1">Distribuidora Norte</div>
+                                    <div class="text-xs text-nexus-textGray">15 Volumes | NF 4452</div>
+                                </div>
+                                <div class="p-4 rounded-2xl border border-nexus-border bg-white card-shadow">
+                                    <div class="flex justify-between mb-3">
+                                        <span class="text-[10px] font-bold text-nexus-blue bg-nexus-blue/10 px-2 py-0.5 rounded uppercase">Entrega</span>
+                                    </div>
+                                    <div class="font-bold text-sm mb-1">Supermercado Silva</div>
+                                    <div class="text-xs text-nexus-textGray">Av. das Nações, 500</div>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                id="gps-route-btn"
+                                onclick="openGpsRoute(this)"
+                                class="gps-route-btn mt-auto p-4 bg-nexus-dark rounded-2xl text-white text-center font-bold text-sm w-full"
+                            >
+                                <span class="gps-route-idle inline-flex items-center justify-center gap-2">
+                                    <i data-lucide="navigation" class="w-4 h-4"></i>
+                                    Abrir GPS da Rota
+                                </span>
+                                <span class="gps-route-loading hidden inline-flex items-center justify-center gap-2">
+                                    <i data-lucide="loader-circle" class="w-4 h-4 gps-spinner"></i>
+                                    Abrindo rota...
+                                </span>
+                                <span class="gps-route-done hidden inline-flex items-center justify-center gap-2">
+                                    <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                                    Rota pronta
+                                </span>
+                                <span class="gps-route-progress" aria-hidden="true"></span>
+                            </button>
+                        </div>
+
+                        <div id="gps-route-screen" class="gps-route-screen absolute inset-0 p-6 pt-16 flex flex-col opacity-0 pointer-events-none transition-all duration-500 translate-y-6">
+                            <div class="flex items-center justify-between mb-6">
+                                <div class="text-sm font-black text-nexus-dark">Navegacao Ativa</div>
+                                <span class="text-[10px] font-bold uppercase text-nexus-cyan bg-white px-2 py-1 rounded-full border border-nexus-cyan/20">GPS</span>
+                            </div>
+
+                            <div class="gps-map-preview relative flex-1 rounded-2xl border border-nexus-border overflow-hidden mb-6">
+                                <div class="absolute top-6 left-6 px-3 py-1.5 rounded-full bg-white/95 border border-nexus-border text-[10px] font-bold text-nexus-blue">
+                                    Distancia: 7.4 km
+                                </div>
+
+                                <svg viewBox="0 0 320 420" class="gps-route-svg" aria-hidden="true">
+                                    <path class="gps-route-path-base" d="M52 352 C82 330, 104 302, 130 280 C150 264, 182 246, 196 214 C210 182, 226 158, 252 122"></path>
+                                    <path class="gps-route-path-highlight" d="M52 352 C82 330, 104 302, 130 280 C150 264, 182 246, 196 214 C210 182, 226 158, 252 122"></path>
+                                </svg>
+
+                                <div class="gps-pin-ping bottom-7 left-6"></div>
+                                <div class="gps-pin-ping top-10 right-10"></div>
+                            </div>
+
+                            <a
+                                href="https://www.google.com/maps/dir/?api=1&destination=-23.55052,-46.633308&travelmode=driving"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="w-full py-3 rounded-xl bg-nexus-blue text-white text-center text-sm font-bold mb-3"
+                            >
+                                Abrir no Google Maps
+                            </a>
+                            <button type="button" onclick="closeGpsRoute()" class="w-full py-3 rounded-xl border border-nexus-border text-nexus-dark text-sm font-bold bg-white">
+                                Voltar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section id="planos" class="py-32 bg-nexus-bg">
+        <div class="max-w-7xl mx-auto px-6 md:px-12 text-center">
+            <h2 class="text-4xl md:text-6xl font-black text-nexus-dark mb-6 gsap-fade-up">Preços transparentes.</h2>
+            <p class="text-nexus-textGray text-xl mb-20 gsap-fade-up">Escolha o plano ideal para a sua frota. Sem fidelidade.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Plan 1 -->
+                <div class="bg-white p-10 rounded-3xl border border-nexus-border card-shadow gsap-fade-up flex flex-col items-center">
+                    <h3 class="font-bold text-nexus-textGray uppercase tracking-widest text-xs mb-4">Start</h3>
+                    <div class="text-5xl font-black text-nexus-dark mb-2">R$ 199</div>
+                    <p class="text-nexus-textGray text-sm mb-10">por mês</p>
+                    <ul class="text-left w-full space-y-4 mb-10 text-sm font-medium">
+                        <li class="flex gap-3"><i data-lucide="check" class="text-nexus-cyan w-5 h-5"></i> Até 5 motoristas</li>
+                        <li class="flex gap-3"><i data-lucide="check" class="text-nexus-cyan w-5 h-5"></i> Fotos ilimitadas</li>
+                        <li class="flex gap-3"><i data-lucide="check" class="text-nexus-cyan w-5 h-5"></i> Dashboard básico</li>
+                    </ul>
+                    <a href="#" class="w-full py-4 rounded-full border border-nexus-dark font-bold text-nexus-dark hover:bg-nexus-dark hover:text-white transition-all mt-auto text-center">Começar</a>
+                </div>
+
+                <!-- Plan 2 -->
+                <div class="bg-white p-10 rounded-3xl border-2 border-nexus-blue card-shadow gsap-fade-up relative transform md:-translate-y-4 flex flex-col items-center">
+                    <div class="absolute -top-4 bg-nexus-blue text-white text-[10px] font-bold px-4 py-1 rounded-full uppercase">Recomendado</div>
+                    <h3 class="font-bold text-nexus-blue uppercase tracking-widest text-xs mb-4">Pro</h3>
+                    <div class="text-5xl font-black text-nexus-dark mb-2">R$ 499</div>
+                    <p class="text-nexus-textGray text-sm mb-10">por mês</p>
+                    <ul class="text-left w-full space-y-4 mb-10 text-sm font-medium">
+                        <li class="flex gap-3"><i data-lucide="check" class="text-nexus-cyan w-5 h-5"></i> Até 20 motoristas</li>
+                        <li class="flex gap-3"><i data-lucide="check" class="text-nexus-cyan w-5 h-5"></i> Assinatura Digital</li>
+                        <li class="flex gap-3"><i data-lucide="check" class="text-nexus-cyan w-5 h-5"></i> Relatórios em PDF</li>
+                        <li class="flex gap-3"><i data-lucide="check" class="text-nexus-cyan w-5 h-5"></i> Suporte WhatsApp</li>
+                    </ul>
+                    <a href="#" class="w-full py-4 rounded-full bg-nexus-blue text-white font-bold shadow-xl shadow-nexus-blue/20 hover:scale-105 transition-all mt-auto text-center">Testar Grátis</a>
+                </div>
+
+                <!-- Plan 3 -->
+                <div class="bg-white p-10 rounded-3xl border border-nexus-border card-shadow gsap-fade-up flex flex-col items-center">
+                    <h3 class="font-bold text-nexus-textGray uppercase tracking-widest text-xs mb-4">Elite</h3>
+                    <div class="text-5xl font-black text-nexus-dark mb-2">Sob Medida</div>
+                    <p class="text-nexus-textGray text-sm mb-10">frotas acima de 50</p>
+                    <ul class="text-left w-full space-y-4 mb-10 text-sm font-medium">
+                        <li class="flex gap-3"><i data-lucide="check" class="text-nexus-cyan w-5 h-5"></i> Motoristas ilimitados</li>
+                        <li class="flex gap-3"><i data-lucide="check" class="text-nexus-cyan w-5 h-5"></i> Integração ERP / API</li>
+                        <li class="flex gap-3"><i data-lucide="check" class="text-nexus-cyan w-5 h-5"></i> SLA de Atendimento</li>
+                    </ul>
+                    <a href="#" class="w-full py-4 rounded-full bg-nexus-dark text-white font-bold hover:opacity-90 transition-all mt-auto text-center">Falar com Vendas</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-nexus-border py-20">
+        <div class="max-w-7xl mx-auto px-6 md:px-12 flex flex-col md:flex-row justify-between items-center gap-10">
+            <div class="flex items-center gap-1 text-3xl font-black tracking-tighter">
+                <span class="text-nexus-blue">NE</span><span class="text-nexus-cyan">X</span><span class="text-nexus-blue">US</span>
+            </div>
+            
+            <div class="flex gap-10 text-sm font-bold text-nexus-textGray">
+                <a href="#" class="hover:text-nexus-blue">Termos</a>
+                <a href="#" class="hover:text-nexus-blue">Privacidade</a>
+                <a href="#" class="hover:text-nexus-blue">Blog</a>
+                <a href="#" class="hover:text-nexus-blue">Contato</a>
+            </div>
+
+            <div class="flex gap-4">
+                <div class="w-10 h-10 rounded-full bg-nexus-gray flex items-center justify-center text-nexus-blue"><i data-lucide="instagram" class="w-5 h-5"></i></div>
+                <div class="w-10 h-10 rounded-full bg-nexus-gray flex items-center justify-center text-nexus-blue"><i data-lucide="linkedin" class="w-5 h-5"></i></div>
+            </div>
+        </div>
+        <div class="text-center mt-10 text-xs text-nexus-textGray opacity-60">
+            &copy; 2026 Nexus Software Logística. Todos os direitos reservados.
+        </div>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+
+        // Interactive Phone Logic
+        function handleFinishDelivery(btn) {
+            const text = btn.querySelector('.btn-text');
+            const loader = btn.querySelector('.btn-loader');
+            const interface = document.getElementById('app-interface');
+            const success = document.getElementById('app-success');
+
+            // Start Loading
+            text.classList.add('hidden');
+            loader.classList.remove('hidden');
+            btn.disabled = true;
+
+            // Simulate Network Request
+            setTimeout(() => {
+                interface.style.opacity = '0';
+                interface.style.transform = 'translateY(-20px)';
+                
+                setTimeout(() => {
+                    interface.classList.add('hidden');
+                    success.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-10');
+                    success.classList.add('opacity-100', 'translate-y-0');
+                }, 300);
+            }, 1500);
+        }
+
+        function resetDelivery() {
+            const interface = document.getElementById('app-interface');
+            const success = document.getElementById('app-success');
+            const btn = interface.querySelector('button');
+            const text = btn.querySelector('.btn-text');
+            const loader = btn.querySelector('.btn-loader');
+
+            success.classList.remove('opacity-100', 'translate-y-0');
+            success.classList.add('opacity-0', 'pointer-events-none', 'translate-y-10');
+
+            setTimeout(() => {
+                interface.classList.remove('hidden');
+                setTimeout(() => {
+                    interface.style.opacity = '1';
+                    interface.style.transform = 'translateY(0)';
+                    text.classList.remove('hidden');
+                    loader.classList.add('hidden');
+                    btn.disabled = false;
+                }, 50);
+            }, 300);
+        }
+
+        function openGpsRoute(btn) {
+            if (btn.dataset.state === 'loading') {
+                return;
+            }
+
+            const idle = btn.querySelector('.gps-route-idle');
+            const loading = btn.querySelector('.gps-route-loading');
+            const done = btn.querySelector('.gps-route-done');
+            const home = document.getElementById('driver-app-home');
+            const routeScreen = document.getElementById('gps-route-screen');
+
+            btn.dataset.state = 'loading';
+            btn.disabled = true;
+            btn.classList.add('is-loading', 'is-pulse');
+            btn.classList.remove('is-done');
+
+            idle.classList.add('hidden');
+            done.classList.add('hidden');
+            loading.classList.remove('hidden');
+
+            setTimeout(() => {
+                btn.classList.remove('is-pulse');
+            }, 450);
+
+            setTimeout(() => {
+                loading.classList.add('hidden');
+                done.classList.remove('hidden');
+                btn.classList.remove('is-loading');
+                btn.classList.add('is-done');
+                btn.dataset.state = 'done';
+            }, 1300);
+
+            setTimeout(() => {
+                home.style.opacity = '0';
+                home.style.transform = 'translateY(-16px)';
+
+                setTimeout(() => {
+                    home.classList.add('pointer-events-none');
+                    routeScreen.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-6');
+                    routeScreen.classList.add('opacity-100', 'translate-y-0');
+
+                    done.classList.add('hidden');
+                    idle.classList.remove('hidden');
+                    btn.classList.remove('is-done');
+                    btn.disabled = false;
+                    btn.dataset.state = 'idle';
+                }, 220);
+            }, 1800);
+        }
+
+        function closeGpsRoute() {
+            const home = document.getElementById('driver-app-home');
+            const routeScreen = document.getElementById('gps-route-screen');
+
+            routeScreen.classList.remove('opacity-100', 'translate-y-0');
+            routeScreen.classList.add('opacity-0', 'pointer-events-none', 'translate-y-6');
+
+            setTimeout(() => {
+                home.classList.remove('pointer-events-none');
+                home.style.opacity = '1';
+                home.style.transform = 'translateY(0)';
+            }, 180);
+        }
+
+        // GSAP Animations
+        gsap.registerPlugin(ScrollTrigger);
+
+        // Hero staggered entry
+        gsap.from(".hero-element", {
+            y: 30,
+            opacity: 0,
+            duration: 0.8,
+            stagger: 0.2,
+            ease: "power3.out",
+            delay: 0.2
+        });
+
+        gsap.from(".hero-mockup", {
+            y: 60,
+            opacity: 0,
+            duration: 1.2,
+            ease: "power2.out",
+            delay: 0.8
+        });
+
+        // Animations on scroll
+        gsap.utils.toArray('.gsap-fade-up').forEach(el => {
+            gsap.from(el, {
+                scrollTrigger: {
+                    trigger: el,
+                    start: "top 90%",
+                },
+                y: 30,
+                opacity: 0,
+                duration: 0.6,
+                ease: "power2.out"
+            });
+        });
+
+        gsap.from(".gsap-fade-right", {
+            scrollTrigger: {
+                trigger: ".gsap-fade-right",
+                start: "top 80%",
+            },
+            x: -40,
+            opacity: 0,
+            duration: 0.8,
+            ease: "power2.out"
+        });
+
+        gsap.from(".gsap-scale-up", {
+            scrollTrigger: {
+                trigger: ".gsap-scale-up",
+                start: "top 80%",
+            },
+            scale: 0.95,
+            opacity: 0,
+            duration: 0.8,
+            ease: "power2.out"
+        });
+    </script>
+</body>
+</html>
